@@ -13,6 +13,7 @@ from .generation import (
     generate_experiment,
 )
 from .models import ExperimentRecord
+from .runner import RunnerError, inspect_prepared_experiment, run_prepared_experiment
 from .storage import RepositoryMemory
 
 
@@ -135,6 +136,54 @@ def cmd_critique(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_run(args: argparse.Namespace) -> int:
+    memory = _memory(args.root)
+    try:
+        problems = inspect_prepared_experiment(memory, args.experiment_id)
+        if problems:
+            raise RunnerError("Experiment is not ready to run:\n- " + "\n- ".join(problems))
+
+        if args.dry_run:
+            record = memory.load(args.experiment_id)
+            request = build_generation_request(record)
+            print(f"Experiment {args.experiment_id} is ready for the Phase 1 runner.")
+            print(f"Image model: {request.model}")
+            print(f"Image size: {request.size}")
+            print(f"Image quality: {request.quality}")
+            print(f"Critic model: {args.critic_model}")
+            print("Finalization remains a separate human-reviewed step.")
+            print("Dry run only; no API request was made.")
+            return 0
+
+        result = run_prepared_experiment(
+            memory,
+            args.experiment_id,
+            OpenAIImageGenerator(),
+            OpenAIImageCritic(model=args.critic_model),
+        )
+    except (
+        RunnerError,
+        GenerationError,
+        CritiqueError,
+        FileNotFoundError,
+        json.JSONDecodeError,
+    ) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    record = memory.load(args.experiment_id)
+    print(f"Experiment {args.experiment_id} reached the human-review gate.")
+    print(f"Generated this run: {'yes' if result.generated else 'no (reused existing result)'}")
+    print(f"Critiqued this run: {'yes' if result.critiqued else 'no (reused existing critique)'}")
+    print(f"Visual average: {record.critique.visual_average}/10")
+    print(f"Hypothesis result: {record.hypothesis_result}")
+    print(f"Candidate learning: {record.candidate_learning}")
+    print(f"Next hypothesis: {record.next_hypothesis}")
+    print(f"Human review packet: {result.review_path}")
+    print(f"After review, finalize with: gpt-image-lab finalize {args.experiment_id}")
+    return 0
+
+
 def cmd_validate(args: argparse.Namespace) -> int:
     memory = _memory(args.root)
     record = memory.load(args.experiment_id)
@@ -228,6 +277,23 @@ def build_parser() -> argparse.ArgumentParser:
         help="Allow an intentional pre-finalize re-review to replace an existing critique.",
     )
     critique.set_defaults(func=cmd_critique)
+
+    run = subparsers.add_parser(
+        "run",
+        help="Advance a fully planned Phase 1 experiment through generation, critique, and validation.",
+    )
+    run.add_argument("experiment_id")
+    run.add_argument(
+        "--critic-model",
+        default="gpt-5.6-sol",
+        help="Vision critic model. Defaults to gpt-5.6-sol.",
+    )
+    run.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Check planning completeness and provider settings without making API requests.",
+    )
+    run.set_defaults(func=cmd_run)
 
     validate = subparsers.add_parser("validate", help="Validate an experiment without finalizing it.")
     validate.add_argument("experiment_id")

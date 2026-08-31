@@ -26,7 +26,7 @@ This keeps public output visually diverse while preserving the ability to learn 
 
 ## Runnable research core
 
-The repository includes a Python core that manages experiment IDs, research records, controlled OpenAI image generation, structured GPT-5.6 visual critique, validation, reports, candidate-learning memory, and next-hypothesis handoff.
+The repository includes a Python core that manages experiment IDs, research records, controlled OpenAI image generation, structured GPT-5.6 visual critique, validation, human-review packets, candidate-learning memory, and next-hypothesis handoff.
 
 ### Install
 
@@ -49,17 +49,49 @@ gpt-image-lab new \
 
 This creates `experiments/0001/experiment.json` plus an `assets/` directory. From Experiment 0002 onward, `new` automatically carries the latest candidate learning and next hypothesis into the new draft.
 
-### Inspect the generation request without spending anything
+### Phase 1 runner
+
+Once an experiment is fully planned, check it without making API calls:
+
+```bash
+gpt-image-lab run 0001 --dry-run
+```
+
+Then, with `OPENAI_API_KEY` configured in the execution environment:
+
+```bash
+gpt-image-lab run 0001
+```
+
+The runner advances a prepared experiment through:
+
+```text
+planning gate
+   ↓
+image generation
+   ↓
+structured GPT-5.6 critique
+   ↓
+research-loop validation
+   ↓
+REVIEW.md
+   ↓
+HUMAN REVIEW
+```
+
+It deliberately **does not finalize the experiment**. Finalization remains a separate human-reviewed action during Phase 1.
+
+The runner is resumable. If a successful image already exists it does not spend another image-generation request; if a complete critique already exists it reuses it. Inconsistent states such as a generation timestamp with a missing image are rejected rather than silently repaired.
+
+### Generate only
+
+To inspect the generation request without spending anything:
 
 ```bash
 gpt-image-lab generate 0001 --dry-run
 ```
 
-Dry run validates model, prompt, size, quality, and output location but makes no API request.
-
-### Generate the image
-
-The OpenAI Image API is used for the actual render. Configure `OPENAI_API_KEY` in the execution environment, then run:
+To generate:
 
 ```bash
 gpt-image-lab generate 0001
@@ -82,9 +114,9 @@ Generation safety rules:
 - output paths cannot escape the experiment directory
 - generated results are stored as PNG
 
-### Critique the generated image
+### Critique only
 
-After a successful generation, run:
+After a successful generation:
 
 ```bash
 gpt-image-lab critique 0001
@@ -105,23 +137,19 @@ The default critic is GPT-5.6 Sol using image input and a strict structured-outp
 - confidence, scope, and limitations
 - a concrete next hypothesis
 
-The critique updates `experiment.json` and writes:
-
-```text
-experiments/0001/critique-metadata.json
-```
+The critique updates `experiment.json` and writes `critique-metadata.json`.
 
 Automated critique is **evidence collection, not final authority**. A human may review the generated image and critique before finalization. An existing critique is not replaced unless `--overwrite` is explicitly supplied before finalization.
 
-### Validate before accepting the experiment
+### Human review and finalize
 
-```bash
-gpt-image-lab validate 0001
+A successful `run` writes:
+
+```text
+experiments/0001/REVIEW.md
 ```
 
-An experiment cannot pass if required research or critique evidence is missing.
-
-### Finalize
+After reviewing the image and evidence:
 
 ```bash
 gpt-image-lab finalize 0001
@@ -134,24 +162,13 @@ Finalization:
 3. appends the finding to `knowledge/LEARNINGS.md`
 4. preserves the next hypothesis for the next run
 
-It **never automatically promotes a single result into `PROMPT_PLAYBOOK.md`**, even if the experiment requests promotion. Durable rules require repeated or unusually strong evidence.
+It **never automatically promotes a single result into `PROMPT_PLAYBOOK.md`**. Durable rules require repeated or unusually strong evidence.
 
-### One prepared experiment, end to end
-
-For a fully planned experiment such as 0001, the operational sequence is:
+### Lower-level commands
 
 ```bash
-gpt-image-lab generate 0001
-gpt-image-lab critique 0001
 gpt-image-lab validate 0001
-gpt-image-lab finalize 0001
-```
-
-Planning and research remain deliberately separate from this execution sequence during Phase 1. The lab must prove ten useful accumulated-learning experiments before autonomous hourly planning is enabled.
-
-### Check lab status
-
-```bash
+gpt-image-lab show 0001
 gpt-image-lab status
 ```
 
@@ -169,11 +186,13 @@ GPT-Image-Lab/
 │   ├── critique.py
 │   ├── generation.py
 │   ├── models.py
+│   ├── runner.py
 │   └── storage.py
 ├── tests/
 │   ├── test_core.py
 │   ├── test_critique.py
-│   └── test_generation.py
+│   ├── test_generation.py
+│   └── test_runner.py
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── RESEARCH_LOOP.md
@@ -210,6 +229,7 @@ The code enforces several rules from `docs/RESEARCH_LOOP.md`:
 - at least one worked, failed, and uncertain observation for standard experiments
 - research evidence or an explicit reason new research was unnecessary
 - exactly 1–2 primary variables
+- controlled conditions identified before generation
 - all ten visual-rubric scores, each with evidence
 - one hypothesis-specific metric
 - critique from visual craft, prompt adherence/model behavior, and commercial/social usability viewpoints
@@ -226,7 +246,7 @@ The visual critic model may also evolve. Critique metadata therefore records the
 ## Intended evolution
 
 1. **Phase 0 — Foundation:** protocol, rubric, templates, repository rules.
-2. **Phase 1 — Ten useful experiments:** prove that the memory loop produces better questions. Manual API-backed rendering and critique are allowed; autonomous hourly planning is not.
+2. **Phase 1 — Ten useful experiments:** prove that the memory loop produces better questions. A prepared experiment may use the resumable runner, but autonomous topic/research planning is not enabled.
 3. **Phase 2 — Research automation:** automate research → hypothesis → prompt → generation → critique → learning after Phase 1 evidence exists.
 4. **Phase 3 — Hourly research:** schedule the proven loop with cost, retry, and failure guards.
 5. **Phase 4 — SNSAI:** publish selected experiments and collect distribution data.
