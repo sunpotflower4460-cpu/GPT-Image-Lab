@@ -8,7 +8,6 @@ version = "0.1.0"
 description = "Evidence-driven research loop for improving GPT image generation"
 readme = "README.md"
 requires-python = ">=3.11"
-license = {text = "MIT"}
 authors = [{name = "GPT-Image-Lab"}]
 dependencies = []
 
