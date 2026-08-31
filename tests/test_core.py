@@ -78,6 +78,21 @@ def test_incomplete_experiment_fails_validation() -> None:
     assert any("visual scores" in error for error in errors)
 
 
+def test_bootstrap_0001_does_not_require_fake_previous_reflection() -> None:
+    record = complete_record()
+    record.bootstrap_experiment = True
+    record.reflection = Reflection()
+    errors = record.validate()
+    assert not any("reflection." in error for error in errors)
+
+
+def test_bootstrap_flag_is_rejected_after_0001() -> None:
+    record = complete_record("0002")
+    record.bootstrap_experiment = True
+    errors = record.validate()
+    assert any("only allowed for Experiment 0001" in error for error in errors)
+
+
 def test_finalize_writes_report_and_candidate_learning(tmp_path: Path) -> None:
     memory = RepositoryMemory(tmp_path)
     record = complete_record()
