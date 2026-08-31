@@ -99,6 +99,7 @@ class Critique:
 @dataclass(slots=True)
 class ExperimentRecord:
     experiment_id: str
+    bootstrap_experiment: bool = False
     subject: str = ""
     investigation: str = ""
     why_it_matters: str = ""
@@ -139,10 +140,8 @@ class ExperimentRecord:
         data.pop("visual_average", None)
         data["reflection"] = Reflection(**data.get("reflection", {}))
         data["research"] = ResearchNote(**data.get("research", {}))
-        generation = data.get("generation", {})
-        data["generation"] = GenerationMetadata(**generation)
-        critique = data.get("critique", {})
-        data["critique"] = Critique(**critique)
+        data["generation"] = GenerationMetadata(**data.get("generation", {}))
+        data["critique"] = Critique(**data.get("critique", {}))
         return cls(**data)
 
     def validate(self) -> list[str]:
@@ -166,12 +165,16 @@ class ExperimentRecord:
             if not str(value).strip():
                 errors.append(f"missing required field: {name}")
 
-        if not self.reflection.worked:
-            errors.append("reflection.worked must contain at least one observation")
-        if not self.reflection.failed:
-            errors.append("reflection.failed must contain at least one observation")
-        if not self.reflection.uncertain:
-            errors.append("reflection.uncertain must contain at least one observation")
+        if self.bootstrap_experiment:
+            if self.experiment_id != "0001":
+                errors.append("bootstrap_experiment is only allowed for Experiment 0001")
+        else:
+            if not self.reflection.worked:
+                errors.append("reflection.worked must contain at least one observation")
+            if not self.reflection.failed:
+                errors.append("reflection.failed must contain at least one observation")
+            if not self.reflection.uncertain:
+                errors.append("reflection.uncertain must contain at least one observation")
 
         if not self.research.learned and not self.research.relevance.strip():
             errors.append("research must contain learned items or an explicit relevance/no-new-research note")
