@@ -5,6 +5,12 @@ import json
 import sys
 from pathlib import Path
 
+from .generation import (
+    GenerationError,
+    OpenAIImageGenerator,
+    build_generation_request,
+    generate_experiment,
+)
 from .models import ExperimentRecord
 from .storage import RepositoryMemory
 
@@ -63,9 +69,44 @@ def cmd_status(args: argparse.Namespace) -> int:
 
     state = "finalized" if latest.finalized_at else "draft"
     kind = "bootstrap" if latest.bootstrap_experiment else "standard"
-    print(f"Latest: {latest.experiment_id} ({state}, {kind}) — {latest.subject or 'subject not set'}")
+    generated = "generated" if latest.generation.generated_at else "not generated"
+    print(
+        f"Latest: {latest.experiment_id} ({state}, {kind}, {generated}) — "
+        f"{latest.subject or 'subject not set'}"
+    )
     print(f"Candidate learning: {latest.candidate_learning or 'not yet recorded'}")
     print(f"Next hypothesis: {latest.next_hypothesis or 'not yet recorded'}")
+    return 0
+
+
+def cmd_generate(args: argparse.Namespace) -> int:
+    memory = _memory(args.root)
+    try:
+        record = memory.load(args.experiment_id)
+        request = build_generation_request(record)
+        if args.dry_run:
+            print(f"Experiment: {record.experiment_id}")
+            print(f"Model: {request.model}")
+            print(f"Size: {request.size}")
+            print(f"Quality: {request.quality}")
+            print(f"Output: {record.output_reference}")
+            print("Dry run only; no API request was made.")
+            return 0
+
+        output = generate_experiment(
+            memory,
+            args.experiment_id,
+            OpenAIImageGenerator(),
+            overwrite=args.overwrite,
+        )
+    except (GenerationError, FileNotFoundError, json.JSONDecodeError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    print(f"Generated Experiment {args.experiment_id}: {output}")
+    print(
+        f"Metadata: {memory.experiment_path(args.experiment_id) / 'result-metadata.json'}"
+    )
     return 0
 
 
@@ -130,6 +171,22 @@ def build_parser() -> argparse.ArgumentParser:
 
     status = subparsers.add_parser("status", help="Show experiment count and latest learning.")
     status.set_defaults(func=cmd_status)
+
+    generate = subparsers.add_parser(
+        "generate", help="Generate the image for an experiment with the OpenAI Image API."
+    )
+    generate.add_argument("experiment_id")
+    generate.add_argument(
+        "--dry-run",
+        action="store_true",
+        help="Validate and show generation settings without making an API request.",
+    )
+    generate.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Allow an intentional pre-finalize retry to replace an existing result image.",
+    )
+    generate.set_defaults(func=cmd_generate)
 
     validate = subparsers.add_parser("validate", help="Validate an experiment without finalizing it.")
     validate.add_argument("experiment_id")
