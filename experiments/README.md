@@ -4,43 +4,62 @@ Every experiment gets its own immutable folder.
 
 ## Naming
 
-Use:
+The implemented storage format uses a four-digit experiment ID as the directory name:
 
 ```text
-NNNN-short-descriptive-slug
+0001
+0002
+0003
 ```
 
-Examples:
+Never reuse an experiment ID. Human-readable subject and investigation names live inside `experiment.json` and `REPORT.md` rather than in the directory name, which keeps machine parsing and handoff stable.
+
+## Phase 1 structure
 
 ```text
-0001-functional-rim-light
-0002-glass-material-language
-0003-premium-typography-layout
+experiments/0001/
+├── experiment.json
+├── REPORT.md          # created only after successful finalization
+└── assets/
+    ├── README.md
+    └── result.png     # or another durable output reference
 ```
 
-Never reuse an experiment ID.
+`experiment.json` is the source record for the experiment. `REPORT.md` is a human-readable rendering of the finalized evidence.
 
-## Minimum contents
+## Lifecycle
 
-During the early manual phase, one Markdown file based on `templates/EXPERIMENT_TEMPLATE.md` is enough, plus the generated image or a durable reference to it.
+Create the next draft:
 
-Suggested mature structure:
-
-```text
-experiments/0001-example/
-├── experiment.md
-├── result.png
-├── result-metadata.json
-└── references.md
+```bash
+gpt-image-lab new --subject "..." --investigation "..." --variable "..."
 ```
 
-Split the Markdown into separate `research.md`, `prompt.md`, `critique.md`, etc. only when automation or scale makes that genuinely useful.
+Validate it:
+
+```bash
+gpt-image-lab validate 0001
+```
+
+Finalize only when the research-loop gate passes:
+
+```bash
+gpt-image-lab finalize 0001
+```
+
+The next experiment receives the prior candidate learning and unresolved next hypothesis as starting memory.
 
 ## Immutability rule
 
-Do not rewrite old experiment outcomes to match later beliefs.
+Do not rewrite finalized experiment outcomes to match later beliefs.
 
-If an interpretation changes later, add a dated correction / follow-up reference instead. Raw experimental history should remain auditable.
+The CLI/storage layer rejects finalizing the same experiment twice. If an interpretation changes later, create a new experiment and link the new evidence back to the original in its notes. Raw experimental history should remain auditable.
+
+## Candidate versus durable knowledge
+
+Finalization appends the result to `knowledge/LEARNINGS.md` as candidate evidence.
+
+It does **not** automatically modify `knowledge/PROMPT_PLAYBOOK.md`. A durable rule requires replication, a strong controlled comparison, or another explicit evidence review.
 
 ## Failed runs
 
