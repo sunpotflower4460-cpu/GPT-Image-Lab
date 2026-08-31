@@ -5,6 +5,7 @@ import json
 import sys
 from pathlib import Path
 
+from .critique import CritiqueError, OpenAIImageCritic, critique_experiment
 from .generation import (
     GenerationError,
     OpenAIImageGenerator,
@@ -70,8 +71,9 @@ def cmd_status(args: argparse.Namespace) -> int:
     state = "finalized" if latest.finalized_at else "draft"
     kind = "bootstrap" if latest.bootstrap_experiment else "standard"
     generated = "generated" if latest.generation.generated_at else "not generated"
+    critiqued = "critiqued" if latest.critique.visual_scores else "not critiqued"
     print(
-        f"Latest: {latest.experiment_id} ({state}, {kind}, {generated}) — "
+        f"Latest: {latest.experiment_id} ({state}, {kind}, {generated}, {critiqued}) — "
         f"{latest.subject or 'subject not set'}"
     )
     print(f"Candidate learning: {latest.candidate_learning or 'not yet recorded'}")
@@ -107,6 +109,29 @@ def cmd_generate(args: argparse.Namespace) -> int:
     print(
         f"Metadata: {memory.experiment_path(args.experiment_id) / 'result-metadata.json'}"
     )
+    return 0
+
+
+def cmd_critique(args: argparse.Namespace) -> int:
+    memory = _memory(args.root)
+    try:
+        metadata_path = critique_experiment(
+            memory,
+            args.experiment_id,
+            OpenAIImageCritic(model=args.model),
+            overwrite=args.overwrite,
+        )
+    except (CritiqueError, FileNotFoundError, json.JSONDecodeError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 1
+
+    record = memory.load(args.experiment_id)
+    print(f"Critiqued Experiment {args.experiment_id} with {args.model}.")
+    print(f"Visual average: {record.critique.visual_average}/10")
+    print(f"Hypothesis result: {record.hypothesis_result}")
+    print(f"Candidate learning: {record.candidate_learning}")
+    print(f"Next hypothesis: {record.next_hypothesis}")
+    print(f"Metadata: {metadata_path}")
     return 0
 
 
@@ -187,6 +212,22 @@ def build_parser() -> argparse.ArgumentParser:
         help="Allow an intentional pre-finalize retry to replace an existing result image.",
     )
     generate.set_defaults(func=cmd_generate)
+
+    critique = subparsers.add_parser(
+        "critique", help="Evaluate a generated experiment image with GPT-5.6 vision."
+    )
+    critique.add_argument("experiment_id")
+    critique.add_argument(
+        "--model",
+        default="gpt-5.6-sol",
+        help="Vision critic model. Defaults to gpt-5.6-sol.",
+    )
+    critique.add_argument(
+        "--overwrite",
+        action="store_true",
+        help="Allow an intentional pre-finalize re-review to replace an existing critique.",
+    )
+    critique.set_defaults(func=cmd_critique)
 
     validate = subparsers.add_parser("validate", help="Validate an experiment without finalizing it.")
     validate.add_argument("experiment_id")
