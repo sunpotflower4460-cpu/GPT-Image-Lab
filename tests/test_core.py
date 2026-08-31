@@ -109,6 +109,20 @@ def test_finalize_never_auto_promotes_playbook(tmp_path: Path) -> None:
     assert playbook.read_text(encoding="utf-8") == "# Durable Playbook\n"
 
 
+def test_finalized_experiment_cannot_be_finalized_twice(tmp_path: Path) -> None:
+    memory = RepositoryMemory(tmp_path)
+    record = complete_record()
+    memory.create_draft(record)
+    memory.finalize(record)
+
+    reloaded = memory.load("0001")
+    with pytest.raises(ValueError, match="already finalized"):
+        memory.finalize(reloaded)
+
+    learnings = (tmp_path / "knowledge" / "LEARNINGS.md").read_text(encoding="utf-8")
+    assert learnings.count("## Experiment 0001") == 1
+
+
 def test_primary_variables_are_limited_to_two() -> None:
     record = complete_record()
     record.primary_variables = ["a", "b", "c"]
