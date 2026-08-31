@@ -1,0 +1,80 @@
+{
+  "experiment_id": "0001",
+  "bootstrap_experiment": true,
+  "subject": "Fictional premium clear-glass fragrance bottle in a controlled studio product photograph",
+  "investigation": "Establish the first measured GPT-Image-Lab baseline by testing whether explicit functional key/fill/rim lighting language can produce coherent luxury-product lighting without obvious halos or impossible reflections.",
+  "why_it_matters": "Lighting is one of the strongest drivers of perceived professional finish. A measurable lighting baseline gives later experiments something concrete to improve rather than relying on vague adjectives such as cinematic or premium.",
+  "relevant_prior_findings": [
+    "No prior GPT-Image-Lab experiment exists; this bootstrap run establishes the first measured baseline."
+  ],
+  "unresolved_question": "Can functional lighting-role language produce a commercially credible baseline on a reflection-sensitive glass subject in a single generation?",
+  "reflection": {
+    "worked": [],
+    "failed": [],
+    "uncertain": []
+  },
+  "research": {
+    "learned": [
+      "OpenAI currently describes GPT-Image-2 as its state-of-the-art image generation model, with high-quality generation, flexible image sizes, and high-fidelity image inputs.",
+      "A common three-point product-lighting setup separates light by function: key light is the primary source, rim light exposes the subject silhouette, and fill light opens darker areas not reached by the other lights.",
+      "Controlled studio lighting is useful in product photography because consistency and accuracy are important and natural light can change rapidly."
+    ],
+    "relevance": "The first experiment should use an image model suited to high-quality output and a lighting setup whose visual functions are independently describable. Glass is deliberately chosen because lighting and reflection errors are easy to see.",
+    "uncertainty": [
+      "Natural-language descriptions of photographic lighting may not map to physically exact light ratios.",
+      "A single generated sample can establish a baseline but cannot establish a universal prompting rule.",
+      "Glass rendering quality may confound the lighting judgment because reflection and material behavior are tightly coupled."
+    ],
+    "sources": [
+      "https://developers.openai.com/api/docs/models/gpt-image-2",
+      "https://experienceleague.adobe.com/en/docs/creative-cloud-enterprise-learn/cce-learning-hub/3doverview/3dtutorials/mastering3dlighting",
+      "https://www.adobe.com/jp/creativecloud/photography/discover/product-photography.html"
+    ]
+  },
+  "hypothesis": "Explicitly assigning distinct functions to key, fill, and rim lights will produce a usable professional baseline with coherent subject separation and controlled glass reflections, reaching at least 8/10 for lighting and professional finish without an impossible-reflection/lighting fatal failure.",
+  "primary_variables": [
+    "functional three-point lighting language"
+  ],
+  "held_stable": [
+    "single fictional fragrance bottle",
+    "clear optical glass material",
+    "dark neutral studio background",
+    "centered commercial product composition",
+    "no typography or brand marks"
+  ],
+  "expected_benefit": "Clearer light hierarchy, stronger subject/background separation, controlled highlights, and a more deliberate luxury-advertising finish.",
+  "possible_downside": "The model may exaggerate the rim light into a glowing halo or create reflections that do not agree with the described light positions.",
+  "prompt": "Create a high-end commercial studio product photograph for a fictional, completely unbranded fragrance bottle. One rectangular bottle made from thick, optically clear glass with subtle realistic refraction, a minimal brushed-metal cap, and pale transparent liquid inside. Center the bottle in a clean vertical composition with generous negative space and a restrained luxury-advertising mood. Camera language: full-frame product photography, approximately 85mm lens perspective, eye-level to slightly low product angle, crisp subject detail with a natural controlled depth falloff. Lighting must have explicit functional roles: a large diffused KEY light from camera-left at roughly 45 degrees and slightly above the bottle defines the main form and creates a broad soft highlight across the glass; a much softer low-intensity FILL from front-right only opens the deepest shadows without flattening the key-light direction; a narrow controlled RIM / strip light from behind-right separates the outer glass silhouette from the dark background but must not form a glowing halo. Use a charcoal-to-black seamless studio background and a dark matte surface with only a subtle physically plausible contact reflection. Preserve believable glass thickness, refraction, liquid level, cap geometry, highlight continuity, and grounded contact shadow. Color palette: neutral charcoal, silver, clear glass, faint cool-white highlights. The final image should feel like a real premium fragrance campaign photographed by an experienced still-life team: restrained, precise, tactile, and expensive rather than flashy. No text, no logo, no label, no extra bottle, no props, no hands, no decorative particles. Avoid warped glass edges, doubled contours, impossible reflections, clipped highlights, excessive bloom, neon rim light, plastic-looking glass, floating objects, and over-sharpened AI texture.",
+  "prompt_rationale": "The bootstrap experiment intentionally focuses on one inspectable prompt dimension: functional lighting roles. The subject, palette, composition, and absence of typography are kept simple so lighting coherence and reflection behavior are easier to judge. Generic quality adjectives are secondary to concrete visual instructions.",
+  "output_reference": "assets/result.png",
+  "generation": {
+    "model": "gpt-image-2",
+    "generated_at": "",
+    "prompt_version": "v1",
+    "width": 1024,
+    "height": 1536,
+    "quality": "high",
+    "reference_images": [],
+    "seed": null,
+    "cost": null
+  },
+  "critique": {
+    "visual_scores": {},
+    "evidence": {},
+    "fatal_failures": {},
+    "hypothesis_metric_name": "lighting coherence and subject separation",
+    "hypothesis_metric_score": null,
+    "hypothesis_metric_evidence": "",
+    "viewpoints": {}
+  },
+  "hypothesis_result": "",
+  "hypothesis_result_reason": "",
+  "confounds": [],
+  "candidate_learning": "",
+  "confidence": "",
+  "learning_scope": "Studio-style product imagery with reflective or transparent materials.",
+  "learning_limits": "This bootstrap run cannot by itself establish that functional lighting language is superior to generic lighting language.",
+  "promote_to_playbook": false,
+  "next_hypothesis": "",
+  "finalized_at": ""
+}
