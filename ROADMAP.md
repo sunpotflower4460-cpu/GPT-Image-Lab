@@ -2,7 +2,7 @@
 
 ## Phase 0 — Foundation
 
-Goal: define how GPT-Image-Lab learns before adding automation.
+Goal: define how GPT-Image-Lab learns before adding autonomous research.
 
 - [x] Define project mission and core loop
 - [x] Separate image-quality signals from social-performance signals
@@ -12,15 +12,36 @@ Goal: define how GPT-Image-Lab learns before adding automation.
 - [x] Implement experiment validation / storage core
 - [x] Implement candidate-learning memory with no automatic playbook promotion
 - [x] Implement CLI for new / status / validate / finalize / show
-- [ ] Run Experiment 0001 manually
+- [x] Implement safe GPT-Image-2 generation adapter
+- [x] Implement structured GPT-5.6 visual critique
+- [x] Implement resumable Phase 1 runner and human-review gate
+- [x] Prepare Experiment 0001 research / hypothesis / prompt
+- [x] Add CI readiness checks for Experiment 0001
+- [ ] Execute and finalize Experiment 0001 with a live API credential
 
 ## Phase 1 — Ten useful experiments
 
 Exit condition: 10 consecutive experiments each reuse prior knowledge and produce a concrete next hypothesis.
 
-Supporting tooling is implemented; the evidence-gathering sequence itself remains intentionally manual/semi-manual until the exit condition is met.
+Supporting execution tooling is implemented. Topic selection, fresh research, hypothesis formation, and prompt design remain deliberate during this phase; generation and critique may be executed through the resumable runner.
 
-- [ ] Experiment 0001
+Normal prepared-experiment flow:
+
+```text
+research + planning
+      ↓
+gpt-image-lab run NNNN
+      ↓
+REVIEW.md + image
+      ↓
+human review
+      ↓
+gpt-image-lab finalize NNNN
+      ↓
+candidate learning + next hypothesis
+```
+
+- [ ] Experiment 0001 — functional key/fill/rim lighting baseline on clear glass
 - [ ] Experiment 0002
 - [ ] Experiment 0003
 - [ ] Experiment 0004
@@ -31,22 +52,21 @@ Supporting tooling is implemented; the evidence-gathering sequence itself remain
 - [ ] Experiment 0009
 - [ ] Experiment 0010
 
-Do not automate hourly execution before this exit condition is met.
+Do not enable autonomous hourly research before this exit condition is met.
 
 ## Phase 2 — Research automation
 
-Build one command/job that can:
+Build one research-planning job that can:
 
 1. read recent experiments and durable knowledge
 2. gather fresh research when useful
 3. choose a topic and a small experimental variable set
 4. write hypothesis and prompt plan
-5. call image generation
-6. critique the output
-7. write experiment artifacts
-8. update durable learnings only when evidence is strong enough
+5. hand the prepared experiment to the existing runner
+6. interpret critique and recent evidence
+7. propose knowledge promotion only when evidence is strong enough
 
-Add safeguards for duplicated themes, repeated hypotheses, low-information experiments, and accidental overwriting of prior knowledge.
+Add safeguards for duplicated themes, repeated hypotheses, low-information experiments, overfitting to one subject, and accidental overwriting of prior knowledge.
 
 ## Phase 3 — Hourly research
 
@@ -54,9 +74,10 @@ After the loop is reliable:
 
 - schedule at most once per hour
 - persist every run with an experiment ID
-- allow failed generations to be recorded without poisoning the knowledge base
+- allow technical and visual failures to be recorded without poisoning the knowledge base
 - add cost / quota guards
-- add retry and failure logging
+- add bounded retry and failure logging
+- prevent simultaneous runs from claiming the same experiment ID
 - generate a daily summary from that day's runs
 
 ## Phase 4 — SNS account + SNSAI
