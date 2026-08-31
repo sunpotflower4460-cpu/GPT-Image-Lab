@@ -33,6 +33,14 @@ jobs:
       GH_TOKEN: ${{ github.token }}
 
     steps:
+      - name: Validate workflow input
+        shell: bash
+        run: |
+          if [[ ! "$EXPERIMENT_ID" =~ ^[0-9]{4}$ ]]; then
+            echo "::error::experiment_id must be exactly four digits, for example 0001."
+            exit 1
+          fi
+
       - name: Check API credential
         shell: bash
         run: |
@@ -97,8 +105,8 @@ jobs:
 
           ### Review before merge
 
-          - inspect \`experiments/${EXPERIMENT_ID}/assets/result.png\u0060
-          - inspect \`experiments/${EXPERIMENT_ID}/REVIEW.md\u0060
+          - inspect experiments/${EXPERIMENT_ID}/assets/result.png
+          - inspect experiments/${EXPERIMENT_ID}/REVIEW.md
           - verify the visual critique is reasonable
           - verify the hypothesis result and candidate learning are supported by visible evidence
           - verify the next hypothesis is worth testing
