@@ -13,7 +13,7 @@ Each experiment follows the same cycle:
 3. **Form a Hypothesis** — decide what 1–2 variables to test next.
 4. **Design the Prompt** — build a professional prompt with explicit visual intent.
 5. **Generate** — create the image.
-6. **Critique** — evaluate both visual quality and instruction adherence.
+6. **Critique** — evaluate visual quality, prompt adherence, and commercial/social usability.
 7. **Record Learning** — write candidate findings back into the repository.
 8. **Prepare Distribution** — later, pass selected outputs to SNSAI and prepare a daily note draft.
 9. **Learn from Response** — later, feed social performance back into the research loop without confusing popularity with image quality.
@@ -26,7 +26,7 @@ This keeps public output visually diverse while preserving the ability to learn 
 
 ## Runnable research core
 
-The repository includes a Python core that manages experiment IDs, research records, validation, reports, candidate-learning memory, next-hypothesis handoff, and controlled OpenAI image generation.
+The repository includes a Python core that manages experiment IDs, research records, controlled OpenAI image generation, structured GPT-5.6 visual critique, validation, reports, candidate-learning memory, and next-hypothesis handoff.
 
 ### Install
 
@@ -74,7 +74,7 @@ experiments/0001/result-metadata.json
 
 The sidecar metadata records provider, model, timestamp, prompt version, dimensions, quality, byte count, and SHA-256. The experiment JSON is updated with the generation timestamp only after a successful render.
 
-Safety rules:
+Generation safety rules:
 
 - finalized experiments cannot be regenerated
 - an existing result is never overwritten by default
@@ -82,21 +82,36 @@ Safety rules:
 - output paths cannot escape the experiment directory
 - generated results are stored as PNG
 
-### Complete the record
+### Critique the generated image
 
-After generation, fill in `experiment.json` with:
+After a successful generation, run:
 
-- previous-result observations: worked / failed / uncertain (not required for the bootstrap experiment)
-- research and source notes
-- one explicit hypothesis
-- 1–2 primary variables
-- final prompt and rationale
-- ten visual scores with evidence
-- a hypothesis-specific metric
-- three critique viewpoints
-- hypothesis result and confounds
-- candidate learning, confidence, scope, limits
-- next hypothesis
+```bash
+gpt-image-lab critique 0001
+```
+
+The default critic is GPT-5.6 Sol using image input and a strict structured-output schema. The critic must return:
+
+- all ten visual-rubric scores from 1–10
+- evidence for every score
+- all fatal-failure flags
+- the hypothesis-specific metric
+- visual-craft critique
+- prompt-adherence / model-behavior critique
+- commercial / social-usability critique
+- hypothesis result and reason
+- confounds
+- candidate learning
+- confidence, scope, and limitations
+- a concrete next hypothesis
+
+The critique updates `experiment.json` and writes:
+
+```text
+experiments/0001/critique-metadata.json
+```
+
+Automated critique is **evidence collection, not final authority**. A human may review the generated image and critique before finalization. An existing critique is not replaced unless `--overwrite` is explicitly supplied before finalization.
 
 ### Validate before accepting the experiment
 
@@ -104,7 +119,7 @@ After generation, fill in `experiment.json` with:
 gpt-image-lab validate 0001
 ```
 
-An experiment cannot pass if required research evidence is missing.
+An experiment cannot pass if required research or critique evidence is missing.
 
 ### Finalize
 
@@ -120,6 +135,19 @@ Finalization:
 4. preserves the next hypothesis for the next run
 
 It **never automatically promotes a single result into `PROMPT_PLAYBOOK.md`**, even if the experiment requests promotion. Durable rules require repeated or unusually strong evidence.
+
+### One prepared experiment, end to end
+
+For a fully planned experiment such as 0001, the operational sequence is:
+
+```bash
+gpt-image-lab generate 0001
+gpt-image-lab critique 0001
+gpt-image-lab validate 0001
+gpt-image-lab finalize 0001
+```
+
+Planning and research remain deliberately separate from this execution sequence during Phase 1. The lab must prove ten useful accumulated-learning experiments before autonomous hourly planning is enabled.
 
 ### Check lab status
 
@@ -138,11 +166,13 @@ GPT-Image-Lab/
 ├── src/gpt_image_lab/
 │   ├── __init__.py
 │   ├── cli.py
+│   ├── critique.py
 │   ├── generation.py
 │   ├── models.py
 │   └── storage.py
 ├── tests/
 │   ├── test_core.py
+│   ├── test_critique.py
 │   └── test_generation.py
 ├── docs/
 │   ├── ARCHITECTURE.md
@@ -191,10 +221,12 @@ The code enforces several rules from `docs/RESEARCH_LOOP.md`:
 
 Research experiments should prefer a pinned GPT Image snapshot when a snapshot is available. This prevents a moving model alias from silently changing during controlled comparisons. A later GPT Image snapshot should be treated as a new model epoch and compared deliberately before durable prompt rules are transferred.
 
+The visual critic model may also evolve. Critique metadata therefore records the critic model and response identifier separately from the image-generation model.
+
 ## Intended evolution
 
 1. **Phase 0 — Foundation:** protocol, rubric, templates, repository rules.
-2. **Phase 1 — Ten useful experiments:** prove that the memory loop produces better questions. Manual API-backed rendering is allowed; autonomous hourly planning is not.
+2. **Phase 1 — Ten useful experiments:** prove that the memory loop produces better questions. Manual API-backed rendering and critique are allowed; autonomous hourly planning is not.
 3. **Phase 2 — Research automation:** automate research → hypothesis → prompt → generation → critique → learning after Phase 1 evidence exists.
 4. **Phase 3 — Hourly research:** schedule the proven loop with cost, retry, and failure guards.
 5. **Phase 4 — SNSAI:** publish selected experiments and collect distribution data.
