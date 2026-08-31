@@ -16,10 +16,11 @@
   "research": {
     "learned": [
       "OpenAI currently describes GPT-Image-2 as its state-of-the-art image generation model, with high-quality generation, flexible image sizes, and high-fidelity image inputs.",
+      "GPT-Image-2 exposes a dated snapshot, allowing controlled experiments to pin the model rather than silently changing with an alias.",
       "A common three-point product-lighting setup separates light by function: key light is the primary source, rim light exposes the subject silhouette, and fill light opens darker areas not reached by the other lights.",
       "Controlled studio lighting is useful in product photography because consistency and accuracy are important and natural light can change rapidly."
     ],
-    "relevance": "The first experiment should use an image model suited to high-quality output and a lighting setup whose visual functions are independently describable. Glass is deliberately chosen because lighting and reflection errors are easy to see.",
+    "relevance": "The first experiment should use an image model suited to high-quality output and a lighting setup whose visual functions are independently describable. Glass is deliberately chosen because lighting and reflection errors are easy to see. The dated model snapshot is pinned so later prompt comparisons are not confounded by an alias update.",
     "uncertainty": [
       "Natural-language descriptions of photographic lighting may not map to physically exact light ratios.",
       "A single generated sample can establish a baseline but cannot establish a universal prompting rule.",
@@ -27,6 +28,7 @@
     ],
     "sources": [
       "https://developers.openai.com/api/docs/models/gpt-image-2",
+      "https://developers.openai.com/api/docs/guides/image-generation",
       "https://experienceleague.adobe.com/en/docs/creative-cloud-enterprise-learn/cce-learning-hub/3doverview/3dtutorials/mastering3dlighting",
       "https://www.adobe.com/jp/creativecloud/photography/discover/product-photography.html"
     ]
@@ -40,7 +42,8 @@
     "clear optical glass material",
     "dark neutral studio background",
     "centered commercial product composition",
-    "no typography or brand marks"
+    "no typography or brand marks",
+    "pinned GPT-Image-2 snapshot"
   ],
   "expected_benefit": "Clearer light hierarchy, stronger subject/background separation, controlled highlights, and a more deliberate luxury-advertising finish.",
   "possible_downside": "The model may exaggerate the rim light into a glowing halo or create reflections that do not agree with the described light positions.",
@@ -48,7 +51,7 @@
   "prompt_rationale": "The bootstrap experiment intentionally focuses on one inspectable prompt dimension: functional lighting roles. The subject, palette, composition, and absence of typography are kept simple so lighting coherence and reflection behavior are easier to judge. Generic quality adjectives are secondary to concrete visual instructions.",
   "output_reference": "assets/result.png",
   "generation": {
-    "model": "gpt-image-2",
+    "model": "gpt-image-2-2026-04-21",
     "generated_at": "",
     "prompt_version": "v1",
     "width": 1024,
