@@ -89,12 +89,6 @@ def prepared_record() -> ExperimentRecord:
     return record
 
 
-def test_prepared_experiment_reports_missing_planning_fields() -> None:
-    memory = RepositoryMemory(Path("/tmp/nonexistent-gpt-image-lab-test"))
-    # This test only exercises record validation through a temporary fixture below.
-    assert memory is not None
-
-
 def test_runner_advances_to_review_without_finalizing(tmp_path: Path) -> None:
     memory = RepositoryMemory(tmp_path)
     memory.create_draft(prepared_record())
@@ -151,3 +145,13 @@ def test_inspect_prepared_experiment_catches_missing_hypothesis(tmp_path: Path) 
 
     problems = inspect_prepared_experiment(memory, "0001")
     assert any("hypothesis" in item for item in problems)
+
+
+def test_runner_refuses_to_start_when_planning_is_incomplete(tmp_path: Path) -> None:
+    memory = RepositoryMemory(tmp_path)
+    record = prepared_record()
+    record.held_stable = []
+    memory.create_draft(record)
+
+    with pytest.raises(RunnerError, match="held_stable"):
+        run_prepared_experiment(memory, "0001", FakeGenerator(), FakeCritic())
