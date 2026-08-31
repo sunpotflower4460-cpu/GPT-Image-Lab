@@ -6,14 +6,19 @@ Goal: define how GPT-Image-Lab learns before adding automation.
 
 - [x] Define project mission and core loop
 - [x] Separate image-quality signals from social-performance signals
-- [ ] Finalize research-loop protocol
-- [ ] Finalize evaluation rubric
-- [ ] Finalize experiment template
+- [x] Finalize research-loop protocol
+- [x] Finalize evaluation rubric
+- [x] Finalize experiment template
+- [x] Implement experiment validation / storage core
+- [x] Implement candidate-learning memory with no automatic playbook promotion
+- [x] Implement CLI for new / status / validate / finalize / show
 - [ ] Run Experiment 0001 manually
 
 ## Phase 1 — Ten useful experiments
 
 Exit condition: 10 consecutive experiments each reuse prior knowledge and produce a concrete next hypothesis.
+
+Supporting tooling is implemented; the evidence-gathering sequence itself remains intentionally manual/semi-manual until the exit condition is met.
 
 - [ ] Experiment 0001
 - [ ] Experiment 0002
