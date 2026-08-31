@@ -17,24 +17,37 @@ def cmd_new(args: argparse.Namespace) -> int:
     memory = _memory(args.root)
     experiment_id = memory.next_experiment_id()
     latest = memory.latest()
+    is_bootstrap = latest is None and experiment_id == "0001"
+
+    prior_findings: list[str] = []
+    unresolved_question = ""
+    if latest:
+        if latest.candidate_learning:
+            prior_findings.append(latest.candidate_learning)
+        unresolved_question = latest.next_hypothesis
+    elif is_bootstrap:
+        prior_findings.append(
+            "No prior GPT-Image-Lab experiment exists; this bootstrap run establishes the first measured baseline."
+        )
 
     record = ExperimentRecord(
         experiment_id=experiment_id,
+        bootstrap_experiment=is_bootstrap,
         subject=args.subject or "",
         investigation=args.investigation or "",
         why_it_matters=args.why or "",
         hypothesis=args.hypothesis or (latest.next_hypothesis if latest else ""),
         primary_variables=args.variable or [],
-        relevant_prior_findings=(
-            [latest.candidate_learning] if latest and latest.candidate_learning else []
-        ),
-        unresolved_question=(latest.next_hypothesis if latest else ""),
+        relevant_prior_findings=prior_findings,
+        unresolved_question=unresolved_question,
     )
     path = memory.create_draft(record)
     print(f"Created Experiment {experiment_id}: {path}")
-    if latest:
+    if is_bootstrap:
+        print("Marked as the bootstrap experiment; no fake previous-image reflection is required.")
+    elif latest:
         print(f"Inherited next hypothesis from Experiment {latest.experiment_id}.")
-    print(f"Edit {path / 'experiment.json'} and add generated assets under {path / 'assets'}. ")
+    print(f"Edit {path / 'experiment.json'} and add generated assets under {path / 'assets'}.")
     return 0
 
 
@@ -49,7 +62,8 @@ def cmd_status(args: argparse.Namespace) -> int:
         return 0
 
     state = "finalized" if latest.finalized_at else "draft"
-    print(f"Latest: {latest.experiment_id} ({state}) — {latest.subject or 'subject not set'}")
+    kind = "bootstrap" if latest.bootstrap_experiment else "standard"
+    print(f"Latest: {latest.experiment_id} ({state}, {kind}) — {latest.subject or 'subject not set'}")
     print(f"Candidate learning: {latest.candidate_learning or 'not yet recorded'}")
     print(f"Next hypothesis: {latest.next_hypothesis or 'not yet recorded'}")
     return 0
