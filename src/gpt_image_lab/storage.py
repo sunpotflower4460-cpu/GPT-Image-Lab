@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -75,6 +74,12 @@ class RepositoryMemory:
         return [self.load(experiment_id) for experiment_id in ids]
 
     def finalize(self, record: ExperimentRecord) -> Path:
+        if record.finalized_at:
+            raise ValueError(
+                f"Experiment {record.experiment_id} is already finalized. "
+                "Create a new experiment for corrections or replication."
+            )
+
         errors = record.validate()
         if errors:
             raise ValueError("Experiment is incomplete:\n- " + "\n- ".join(errors))
