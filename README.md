@@ -24,9 +24,9 @@ Each experiment follows the same cycle:
 
 This keeps public output visually diverse while preserving the ability to learn from experiments.
 
-## Phase 1: runnable research core
+## Runnable research core
 
-The repository now includes a dependency-light Python core that manages experiment IDs, research records, validation, reports, candidate-learning memory, and next-hypothesis handoff.
+The repository includes a Python core that manages experiment IDs, research records, validation, reports, candidate-learning memory, next-hypothesis handoff, and controlled OpenAI image generation.
 
 ### Install
 
@@ -49,16 +49,48 @@ gpt-image-lab new \
 
 This creates `experiments/0001/experiment.json` plus an `assets/` directory. From Experiment 0002 onward, `new` automatically carries the latest candidate learning and next hypothesis into the new draft.
 
+### Inspect the generation request without spending anything
+
+```bash
+gpt-image-lab generate 0001 --dry-run
+```
+
+Dry run validates model, prompt, size, quality, and output location but makes no API request.
+
+### Generate the image
+
+The OpenAI Image API is used for the actual render. Configure `OPENAI_API_KEY` in the execution environment, then run:
+
+```bash
+gpt-image-lab generate 0001
+```
+
+Generation writes:
+
+```text
+experiments/0001/assets/result.png
+experiments/0001/result-metadata.json
+```
+
+The sidecar metadata records provider, model, timestamp, prompt version, dimensions, quality, byte count, and SHA-256. The experiment JSON is updated with the generation timestamp only after a successful render.
+
+Safety rules:
+
+- finalized experiments cannot be regenerated
+- an existing result is never overwritten by default
+- `--overwrite` is allowed only as an explicit pre-finalize retry
+- output paths cannot escape the experiment directory
+- generated results are stored as PNG
+
 ### Complete the record
 
-Add the generated image under the experiment's `assets/` directory and fill in `experiment.json` with:
+After generation, fill in `experiment.json` with:
 
-- previous-result observations: worked / failed / uncertain
+- previous-result observations: worked / failed / uncertain (not required for the bootstrap experiment)
 - research and source notes
 - one explicit hypothesis
 - 1–2 primary variables
 - final prompt and rationale
-- generation metadata
 - ten visual scores with evidence
 - a hypothesis-specific metric
 - three critique viewpoints
@@ -106,10 +138,12 @@ GPT-Image-Lab/
 ├── src/gpt_image_lab/
 │   ├── __init__.py
 │   ├── cli.py
+│   ├── generation.py
 │   ├── models.py
 │   └── storage.py
 ├── tests/
-│   └── test_core.py
+│   ├── test_core.py
+│   └── test_generation.py
 ├── docs/
 │   ├── ARCHITECTURE.md
 │   ├── RESEARCH_LOOP.md
@@ -126,7 +160,6 @@ GPT-Image-Lab/
     ├── README.md
     └── 0001/
         ├── experiment.json
-        ├── REPORT.md
         └── assets/
 ```
 
@@ -144,7 +177,7 @@ The lab therefore keeps visual evaluation separate from future SNSAI performance
 
 The code enforces several rules from `docs/RESEARCH_LOOP.md`:
 
-- at least one worked, failed, and uncertain observation
+- at least one worked, failed, and uncertain observation for standard experiments
 - research evidence or an explicit reason new research was unnecessary
 - exactly 1–2 primary variables
 - all ten visual-rubric scores, each with evidence
@@ -154,11 +187,15 @@ The code enforces several rules from `docs/RESEARCH_LOOP.md`:
 - candidate learning and confidence
 - concrete next hypothesis
 
+## Model reproducibility
+
+Research experiments should prefer a pinned GPT Image snapshot when a snapshot is available. This prevents a moving model alias from silently changing during controlled comparisons. A later GPT Image snapshot should be treated as a new model epoch and compared deliberately before durable prompt rules are transferred.
+
 ## Intended evolution
 
 1. **Phase 0 — Foundation:** protocol, rubric, templates, repository rules.
-2. **Phase 1 — Ten useful experiments:** manually/semi-manually prove that the memory loop produces better questions.
-3. **Phase 2 — Research automation:** add model/provider adapters only after Phase 1 evidence exists.
+2. **Phase 1 — Ten useful experiments:** prove that the memory loop produces better questions. Manual API-backed rendering is allowed; autonomous hourly planning is not.
+3. **Phase 2 — Research automation:** automate research → hypothesis → prompt → generation → critique → learning after Phase 1 evidence exists.
 4. **Phase 3 — Hourly research:** schedule the proven loop with cost, retry, and failure guards.
 5. **Phase 4 — SNSAI:** publish selected experiments and collect distribution data.
 6. **Phase 5 — Closed feedback:** feed SNS results back without treating popularity as image quality.
